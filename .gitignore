@@ -1,0 +1,16 @@
+.DS_Store
+*.rom
+*.fd
+*.qcow2
+*.img
+*.iso
+*.log
+*.out
+*.gb6
+*.json
+secrets.*
+*.key
+*.pem
+*.ppk
+id_rsa*
+id_ed25519*

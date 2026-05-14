@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply MI25/V320 soft PowerPlay table
+After=multi-user.target
+ConditionPathExists=/etc/mi25-powerplay.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/mi25-powerplay-apply
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

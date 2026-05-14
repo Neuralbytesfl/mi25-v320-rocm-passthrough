@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONF=/etc/mi25-powerplay.conf
+[ -r "$CONF" ] && source "$CONF"
+
+POWER_W=${POWER_W:-130}
+PROFILE=${PROFILE:-COMPUTE}
+PERF_LEVEL=${PERF_LEVEL:-high}
+CARD=${CARD:-/sys/class/drm/card1/device}
+ROCM_SMI=${ROCM_SMI:-/opt/rocm/bin/rocm-smi}
+TABLE_DIR=${TABLE_DIR:-/etc/mi25-powerplay}
+
+TABLE="$TABLE_DIR/power${POWER_W}.pp_table"
+if [ "$POWER_W" = "110" ]; then
+  TABLE="$TABLE_DIR/original-110w.pp_table"
+fi
+
+for _ in $(seq 1 60); do
+  [ -w "$CARD/pp_table" ] && [ -r "$TABLE" ] && break
+  sleep 1
+done
+
+if [ ! -w "$CARD/pp_table" ]; then
+  echo "pp_table is not writable at $CARD/pp_table" >&2
+  exit 1
+fi
+
+if [ ! -r "$TABLE" ]; then
+  echo "PowerPlay table missing: $TABLE" >&2
+  exit 1
+fi
+
+cat "$TABLE" > "$CARD/pp_table"
+"$ROCM_SMI" --setpoweroverdrive "$POWER_W"
+"$ROCM_SMI" --setperflevel "$PERF_LEVEL"
+"$ROCM_SMI" --setprofile "$PROFILE"
+"$ROCM_SMI" --showpower --showmaxpower --showprofile --showperflevel --showclocks --showtemp
