@@ -192,6 +192,12 @@ sudo systemctl disable --now mi25-powerplay.service
 See [docs/benchmarks.md](docs/benchmarks.md) for measured benchmark results and
 public comparison links.
 
+## Training Ideas
+
+See [docs/training-ideas.md](docs/training-ideas.md) for practical ML training
+directions that fit this older `gfx900` ROCm setup, especially synthetic-data
+generation and learned cellular automata.
+
 ## Multi-GPU Plan
 
 A second card can be passed through to the same VM later if the host can isolate
