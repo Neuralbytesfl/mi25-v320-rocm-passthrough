@@ -127,3 +127,46 @@ Best balanced pick:  130 W
 The higher `150 W` cap works at runtime, but it does not automatically produce
 the best sustained-clock behavior. `130 W` looked cleaner as a balanced setting
 for this card/cooling/VM setup.
+
+## HIP Conway's Game of Life
+
+Example source:
+
+```text
+examples/hip-game-of-life.cpp
+```
+
+Small correctness/preview run:
+
+```text
+Grid: 96x48
+Steps: 64
+Init: glider
+Alive cells after run: 5
+```
+
+Large benchmark run:
+
+```text
+Grid: 8192x8192
+Steps: 10,000
+Cells updated: 671,088,640,000
+Kernel time: 19,973.598 ms
+Throughput: 33.60 billion cell-updates/sec
+Alive cells after run: 1,936,727 (2.89%)
+```
+
+Telemetry during the long run at the persistent `130 W` setting:
+
+```text
+Power:       127-130 W
+GPU busy:    99-100%
+Max edge:    54 C during sampled load
+Max junction:65 C during sampled load
+Max memory:  58 C during sampled load
+SCLK:        991 MHz during sustained load
+MCLK:        500 MHz during sustained load
+```
+
+This workload is memory-neighborhood heavy and sustained the configured power
+cap while keeping temperatures reasonable.
