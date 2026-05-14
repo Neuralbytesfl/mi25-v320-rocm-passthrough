@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Local build notes <noreply@example.invalid>
+Date: Thu, 14 May 2026 00:00:00 +0000
+Subject: [PATCH] amdgpu: improve Vega10 MI25 passthrough init stability
+
+Two local changes were needed for this Radeon PRO V320 / MI25-family Vega10
+card under QEMU passthrough:
+
+1. Increase two PSP bootloader handshakes from 20 ms to 500 ms.
+2. Avoid BACO auto-selection for this Vega10 init path so MODE1 reset is used.
+
+License note: this patch modifies amdgpu driver source. The source is
+distributed under the Linux kernel/AMDGPU driver licensing terms; keep this
+patch under the same terms as the surrounding files if redistributed as source.
+---
+ amd/amdgpu/psp_v3_1.c | 4 ++--
+ amd/amdgpu/soc15.c    | 3 ++-
+ 2 files changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/amd/amdgpu/psp_v3_1.c b/amd/amdgpu/psp_v3_1.c
+index 0000000000..0000000000 100644
+--- a/amd/amdgpu/psp_v3_1.c
++++ b/amd/amdgpu/psp_v3_1.c
+@@ -106,7 +106,7 @@ static int psp_v3_1_bootloader_load_sysdrv(struct psp_context *psp)
+ 	       psp_gfxdrv_command_reg);
+ 
+ 	/* there might be handshake issue with hardware which needs delay */
+-	mdelay(20);
++	mdelay(500);
+ 
+ 	ret = psp_wait_for(psp, SOC15_REG_OFFSET(MP0, 0, mmMP0_SMN_C2PMSG_35),
+ 			   0x80000000, 0x80000000, false);
+@@ -145,7 +145,7 @@ static int psp_v3_1_bootloader_load_sos(struct psp_context *psp)
+ 	       psp_gfxdrv_command_reg);
+ 
+ 	/* there might be handshake issue with hardware which needs delay */
+-	mdelay(20);
++	mdelay(500);
+ 	ret = psp_wait_for(psp, SOC15_REG_OFFSET(MP0, 0, mmMP0_SMN_C2PMSG_81),
+ 			   RREG32_SOC15(MP0, 0, mmMP0_SMN_C2PMSG_81),
+ 			   0, true);
+diff --git a/amd/amdgpu/soc15.c b/amd/amdgpu/soc15.c
+index 0000000000..0000000000 100644
+--- a/amd/amdgpu/soc15.c
++++ b/amd/amdgpu/soc15.c
+@@ -541,7 +541,8 @@ static enum amd_reset_method soc15_asic_reset_method(struct amdgpu_device *adev)
+ 			    adev->pm.fw_version <= 0x283400)
+ 				baco_reset = false;
+ 		} else {
+-			baco_reset = amdgpu_dpm_is_baco_supported(adev);
++			/* MI25/Vega10 passthrough: avoid BACO on init; use MODE1 fallback. */
++			baco_reset = false;
+ 		}
+ 		break;
+ 	case IP_VERSION(13, 0, 2):
+-- 
+2.39.5

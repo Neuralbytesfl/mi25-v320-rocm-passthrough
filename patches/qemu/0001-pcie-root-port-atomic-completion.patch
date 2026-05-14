@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Local build notes <noreply@example.invalid>
+Date: Thu, 14 May 2026 00:00:00 +0000
+Subject: [PATCH] pcie-root-port: add optional atomic completion capability
+
+ROCm on Vega requires PCIe atomic completion support to be visible through the
+guest PCIe hierarchy. This adds an experimental `x-atomic-completion` property
+to the generic PCIe root port and, when enabled, advertises 32-bit and 64-bit
+atomic completion capability in Device Capabilities 2.
+
+This was used with:
+
+  -global pcie-root-port.x-atomic-completion=on
+
+License note: this patch modifies QEMU source files. QEMU is primarily GPL-2.0
+or later; keep this patch under the same license terms as the surrounding QEMU
+files if redistributed as source.
+---
+ hw/pci-bridge/gen_pcie_root_port.c | 2 ++
+ hw/pci/pcie.c                      | 7 +++++++
+ include/hw/pci/pcie_port.h         | 3 +++
+ 3 files changed, 12 insertions(+)
+
+diff --git a/hw/pci-bridge/gen_pcie_root_port.c b/hw/pci-bridge/gen_pcie_root_port.c
+index 0000000000..0000000000 100644
+--- a/hw/pci-bridge/gen_pcie_root_port.c
++++ b/hw/pci-bridge/gen_pcie_root_port.c
+@@ -145,6 +145,8 @@ static Property gen_rp_props[] = {
+                                 speed, PCIE_LINK_SPEED_16),
+     DEFINE_PROP_PCIE_LINK_WIDTH("x-width", PCIESlot,
+                                 width, PCIE_LINK_WIDTH_32),
++    DEFINE_PROP_BOOL("x-atomic-completion", PCIESlot,
++                     atomic_completion, false),
+     DEFINE_PROP_END_OF_LIST()
+ };
+ 
+diff --git a/hw/pci/pcie.c b/hw/pci/pcie.c
+index 0000000000..0000000000 100644
+--- a/hw/pci/pcie.c
++++ b/hw/pci/pcie.c
+@@ -674,6 +674,13 @@ void pcie_cap_slot_init(PCIDevice *dev, PCIESlot *s)
+ 
+     qbus_set_hotplug_handler(BUS(pci_bridge_get_sec_bus(PCI_BRIDGE(dev))),
+                              OBJECT(dev));
++
++    if (s->atomic_completion) {
++        /* PCIe requires setting both comp32 and comp64 if either is supported. */
++        pci_set_long(dev->config + dev->exp.exp_cap + PCI_EXP_DEVCAP2,
++                     PCI_EXP_DEVCAP2_ATOMIC_COMP32 |
++                     PCI_EXP_DEVCAP2_ATOMIC_COMP64);
++    }
+ }
+ 
+ void pcie_cap_slot_reset(PCIDevice *dev)
+diff --git a/include/hw/pci/pcie_port.h b/include/hw/pci/pcie_port.h
+index 0000000000..0000000000 100644
+--- a/include/hw/pci/pcie_port.h
++++ b/include/hw/pci/pcie_port.h
+@@ -68,6 +68,9 @@ struct PCIESlot {
+     /* broken ACPI hotplug compat knob to preserve 6.1 ABI intact */
+     bool        hide_native_hotplug_cap;
+ 
++    /* Enables PCIe Atomic completion on pcie-root-port. */
++    bool        atomic_completion;
++
+     QLIST_ENTRY(PCIESlot) next;
+ };
+ 
+-- 
+2.39.5

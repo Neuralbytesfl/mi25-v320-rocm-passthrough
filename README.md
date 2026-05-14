@@ -53,9 +53,30 @@ The host uses libvirt/QEMU with PCI passthrough. Important host-side pieces:
 The guest root port must expose PCIe atomic completion. Without this, the guest
 driver reports that PCIe atomic ops are unsupported.
 
+The exact QEMU patch used for the local build is included in:
+
+```text
+patches/qemu/0001-pcie-root-port-atomic-completion.patch
+```
+
+The VM used:
+
+```text
+-global pcie-root-port.x-atomic-completion=on
+```
+
 ## Guest Driver Patches
 
 Two guest-side amdgpu DKMS source changes were required for stable GPU init.
+The minimal patch is included in:
+
+```text
+patches/amdgpu/0001-vega10-mi25-passthrough-init-stability.patch
+```
+
+See [docs/patch-details.md](docs/patch-details.md) for a more explicit record
+of the affected files, fields, runtime arguments, verification output, and
+license notes.
 
 ### PSP Delay
 
@@ -170,6 +191,23 @@ sudo systemctl disable --now mi25-powerplay.service
 
 See [docs/benchmarks.md](docs/benchmarks.md) for measured benchmark results and
 public comparison links.
+
+## Multi-GPU Plan
+
+A second card can be passed through to the same VM later if the host can isolate
+it cleanly with IOMMU/vfio. See [docs/multi-gpu.md](docs/multi-gpu.md) for the
+checklist and notes about per-card PowerPlay tables.
+
+## License and Compliance
+
+See [docs/compliance.md](docs/compliance.md). In short:
+
+- Original documentation and helper scripts here are MIT licensed.
+- QEMU patch files should be treated under QEMU's GPL-2.0-or-later terms.
+- AMDGPU patch files should be treated under the source package's driver/kernel
+  licensing terms.
+- Binary VBIOS images and binary PowerPlay table dumps are intentionally not
+  committed.
 
 ## Safety Notes
 
